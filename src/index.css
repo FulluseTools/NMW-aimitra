@@ -10,16 +10,18 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 12mm 10mm;
+    margin: 6mm 6mm 6mm 6mm;
   }
 
-  body {
+  html, body {
     background: white !important;
     color: black !important;
     font-family: 'Mukta', 'Noto Sans Devanagari', 'Gargi', 'Lohit Devanagari', 'Nakula', serif, sans-serif !important;
-    font-size: 11pt;
+    font-size: 10pt;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   .no-print {
@@ -38,6 +40,19 @@
   .print-avoid-break {
     page-break-inside: avoid;
     break-inside: avoid;
+  }
+
+  .single-page-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    max-height: 275mm !important;
+    height: auto !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    padding: 3mm 4mm !important;
+    margin: 0 auto !important;
   }
 
   .print-container {

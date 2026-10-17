@@ -20,36 +20,64 @@ import {
 } from '../utils/letterLogic.ts';
 
 export const OfficialLetterView: React.FC = () => {
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('salary_arrears');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [selectedOfficeId, setSelectedOfficeId] = useState<string>('pay_unit');
   const [outwardNo, setOutwardNo] = useState<string>('जावक क्र. _____ / २०२६-२७');
   const [letterDate, setLetterDate] = useState<string>(
     new Date().toLocaleDateString('mr-IN')
   );
   const [customSubject, setCustomSubject] = useState<string>('');
+  const [customReference, setCustomReference] = useState<string>('');
   const [customBody, setCustomBody] = useState<string>('');
+  const [customEnclosuresText, setCustomEnclosuresText] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
   const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
   const [aiCustomPrompt, setAiCustomPrompt] = useState<string>('');
 
+  const parsedEnclosures = customEnclosuresText.trim()
+    ? customEnclosuresText
+        .split('\n')
+        .map((e) => e.trim())
+        .filter((e) => e.length > 0)
+    : undefined;
+
   // Generate current letter object
   const currentLetter: GeneratedOfficialLetter = generateOfficialLetterText(
     selectedTemplateId,
-    customSubject || undefined,
+    customSubject,
     selectedOfficeId,
-    customBody || undefined,
+    customBody,
     outwardNo,
-    letterDate
+    letterDate,
+    customReference,
+    parsedEnclosures
   );
 
   const handleTemplateChange = (tmplId: string) => {
     setSelectedTemplateId(tmplId);
+    if (!tmplId) {
+      setCustomSubject('');
+      setCustomReference('');
+      setCustomBody('');
+      setCustomEnclosuresText('');
+      return;
+    }
     const tmpl = LETTER_TEMPLATES.find((t) => t.id === tmplId);
     if (tmpl) {
       setSelectedOfficeId(tmpl.officeId);
       setCustomSubject(tmpl.defaultSubject);
+      setCustomReference(tmpl.defaultReference);
       setCustomBody(tmpl.bodyContent);
+      setCustomEnclosuresText(tmpl.enclosures.join('\n'));
     }
+  };
+
+  const handleResetToBlank = () => {
+    setSelectedTemplateId('');
+    setCustomSubject('');
+    setCustomReference('');
+    setCustomBody('');
+    setCustomEnclosuresText('');
   };
 
   const handlePrint = () => {
@@ -69,16 +97,16 @@ ${currentLetter.recipientOffice},
 ${currentLetter.recipientLocation}.
 
 विषय: ${currentLetter.subject}
-संदर्भ: ${currentLetter.reference}
-
+${currentLetter.reference ? `संदर्भ: ${currentLetter.reference}\n` : ''}
 ${currentLetter.salutation}
 
 ${currentLetter.bodyParagraphs.join('\n\n')}
 
-सोबत जोडलेली कागदपत्रे (संलग्नक):
-${currentLetter.enclosures.map((enc, idx) => `${idx + 1}. ${enc}`).join('\n')}
-
-
+${
+  currentLetter.enclosures && currentLetter.enclosures.length > 0
+    ? `सोबत जोडलेली कागदपत्रे (संलग्नक):\n${currentLetter.enclosures.map((enc, idx) => `${idx + 1}. ${enc}`).join('\n')}\n\n`
+    : ''
+}
 स्थळ - ${currentLetter.place}                                       ${currentLetter.signatoryTitle}
     `.trim();
 
@@ -108,6 +136,9 @@ ${currentLetter.enclosures.map((enc, idx) => `${idx + 1}. ${enc}`).join('\n')}
       const data = await res.json();
       if (data.success && data.text) {
         setCustomBody(data.text);
+        if (!customSubject) {
+          setCustomSubject(aiCustomPrompt);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -165,14 +196,26 @@ ${currentLetter.enclosures.map((enc, idx) => `${idx + 1}. ${enc}`).join('\n')}
         {/* Office & Template Selection */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 mb-1">
-              पत्राचा प्रकार / विषय निवडा
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[11px] font-bold text-slate-700">
+                पत्राचा प्रकार / विषय निवडा
+              </label>
+              {selectedTemplateId && (
+                <button
+                  type="button"
+                  onClick={handleResetToBlank}
+                  className="text-[10px] text-amber-700 hover:text-amber-900 font-semibold underline cursor-pointer"
+                >
+                  कोरा करा (स्वतःचा मजकूर)
+                </button>
+              )}
+            </div>
             <select
               value={selectedTemplateId}
               onChange={(e) => handleTemplateChange(e.target.value)}
               className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none"
             >
+              <option value="">-- कोरा / स्वतःचा मजकूर (Specific पत्र लिहा) --</option>
               {LETTER_TEMPLATES.map((tmpl) => (
                 <option key={tmpl.id} value={tmpl.id}>
                   {tmpl.title} ({tmpl.category})
@@ -212,29 +255,64 @@ ${currentLetter.enclosures.map((enc, idx) => `${idx + 1}. ${enc}`).join('\n')}
           </div>
         </div>
 
-        {/* Live Subject and Paragraph Editing */}
+        {/* Live Subject, Reference and Paragraph Editing */}
         <div className="space-y-3 pt-2 border-t border-slate-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                पत्राचा विषय (Subject - येथे स्वतःचा विषय लिहा)
+              </label>
+              <input
+                type="text"
+                placeholder="उदा. प्रयोगशाळा साहित्य अनुदान मागणीबाबत किंवा शिक्षकांच्या रजेबाबत..."
+                value={customSubject}
+                onChange={(e) => setCustomSubject(e.target.value)}
+                className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                संदर्भ (Reference - असल्यास लिहा किंवा रिकामे ठेवा)
+              </label>
+              <input
+                type="text"
+                placeholder="उदा. १. शासन परिपत्रक क्र. संकीर्ण-२०२६/सेवा-१"
+                value={customReference}
+                onChange={(e) => setCustomReference(e.target.value)}
+                className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 mb-1">
-              पत्राचा विषय (Subject - आवश्यकतेनुसार संपादन करा)
-            </label>
-            <input
-              type="text"
-              value={customSubject || currentLetter.subject}
-              onChange={(e) => setCustomSubject(e.target.value)}
-              className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none"
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[11px] font-bold text-slate-700">
+                पत्राचा मुख्य मजकूर (Body - येथे थेट आपला विशिष्ट मजकूर टाईप किंवा पेस्ट करा)
+              </label>
+              <span className="text-[10px] text-slate-500">
+                (दोन परिच्छेदांमध्ये १ ओळ मोकळी सोडा)
+              </span>
+            </div>
+            <textarea
+              rows={6}
+              placeholder="महोदय / सविनय सादर,&#10;&#10;उपरोक्त विषयान्वये नामदार मुकुल वासनिक विद्यालय, आडोळ बु. येथून सविनय सादर करण्यात येते की...&#10;&#10;तरी याबाबत सकारात्मक निर्णय घेण्यात यावा, ही नम्र विनंती."
+              value={customBody}
+              onChange={(e) => setCustomBody(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none leading-relaxed"
             />
           </div>
 
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">
-              पत्राचा मुख्य मजकूर (Body - येथे थेट बदल करू शकता)
+              सोबत जोडलेली कागदपत्रे / संलग्नक (Enclosures - प्रत्येकी एका ओळीवर एक कागदपत्र लिहा)
             </label>
             <textarea
-              rows={5}
-              value={customBody || currentLetter.bodyParagraphs.join('\n\n')}
-              onChange={(e) => setCustomBody(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none leading-relaxed"
+              rows={2}
+              placeholder="१. शाळा व्यवस्थापन समिती ठराव प्रत&#10;२. आवश्यक विवरणपत्रे"
+              value={customEnclosuresText}
+              onChange={(e) => setCustomEnclosuresText(e.target.value)}
+              className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
             />
           </div>
         </div>
@@ -248,7 +326,7 @@ ${currentLetter.enclosures.map((enc, idx) => `${idx + 1}. ${enc}`).join('\n')}
           <div className="flex items-center gap-2">
             <input
               type="text"
-              placeholder="उदा. प्रयोगशाळा साहित्यासाठी अनुदान मागणी किंवा शिक्षकांच्या वैद्यकीय रजेचा प्रस्ताव"
+              placeholder="उदा. क्रीडांगण सुधारणेसाठी अनुदान मागणी किंवा शिक्षकांच्या वैद्यकीय रजेचा प्रस्ताव"
               value={aiCustomPrompt}
               onChange={(e) => setAiCustomPrompt(e.target.value)}
               className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
@@ -304,11 +382,13 @@ ${currentLetter.enclosures.map((enc, idx) => `${idx + 1}. ${enc}`).join('\n')}
         {/* Subject & Reference */}
         <div className="space-y-1 pl-4 border-l-2 border-slate-400 text-xs md:text-sm">
           <div className="font-bold">
-            विषय: <span className="font-extrabold">{currentLetter.subject}</span>
+            विषय: <span className="font-extrabold">{currentLetter.subject || '________________________________________________'}</span>
           </div>
-          <div className="text-slate-700 text-xs">
-            संदर्भ: {currentLetter.reference}
-          </div>
+          {currentLetter.reference ? (
+            <div className="text-slate-700 text-xs">
+              संदर्भ: {currentLetter.reference}
+            </div>
+          ) : null}
         </div>
 
         {/* Salutation */}
@@ -317,10 +397,16 @@ ${currentLetter.enclosures.map((enc, idx) => `${idx + 1}. ${enc}`).join('\n')}
         </div>
 
         {/* Body Paragraphs */}
-        <div className="space-y-4 text-xs md:text-sm text-justify leading-relaxed indent-8">
-          {currentLetter.bodyParagraphs.map((para, idx) => (
-            <p key={idx}>{para}</p>
-          ))}
+        <div className="space-y-4 text-xs md:text-sm text-justify leading-relaxed indent-8 min-h-[120px]">
+          {currentLetter.bodyParagraphs.length > 0 ? (
+            currentLetter.bodyParagraphs.map((para, idx) => (
+              <p key={idx}>{para}</p>
+            ))
+          ) : (
+            <p className="text-slate-400 italic font-mono no-print">
+              [येथे पत्राचा मुख्य मजकूर दिसेल. वरील 'पत्राचा मुख्य मजकूर' बॉक्समध्ये आपला मजकूर टाईप करा.]
+            </p>
+          )}
         </div>
 
         {/* Enclosures (संलग्नक) */}

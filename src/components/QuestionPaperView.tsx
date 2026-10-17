@@ -155,17 +155,41 @@ ${paper.sectionD.questions.map((q, i) => `${i + 1}. ${q.question}`).join('\n')}
 
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">
-              विषय निवडा
+              विषय निवडा (सर्व शैक्षणिक व श्रेणी विषय उपलब्ध)
             </label>
             <select
               value={subject}
               onChange={(e) => handleSubjectChange(e.target.value)}
               className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none"
             >
-              <option value="maths">गणित (Mathematics)</option>
-              <option value="science">विज्ञान व तंत्रज्ञान (Science)</option>
-              <option value="marathi">मराठी (Marathi)</option>
-              <option value="history">इतिहास व भूगोल (Social Studies)</option>
+              <optgroup label="१. भाषा विषय (Languages)">
+                <option value="marathi">मराठी (प्रथम भाषा)</option>
+                <option value="hindi">हिंदी (द्वितीय भाषा / संयुक्त हिंदी)</option>
+                <option value="english">इंग्रजी (तृतीय भाषा / English)</option>
+              </optgroup>
+
+              <optgroup label="२. गणित व विज्ञान (Maths & Science)">
+                <option value="maths">गणित (सर्वसाधारण / एकत्रित)</option>
+                <option value="maths_algebra">गणित भाग १ (बीजगणित / Algebra)</option>
+                <option value="maths_geometry">गणित भाग २ (भूमिती / Geometry)</option>
+                <option value="science">विज्ञान आणि तंत्रज्ञान (सामान्य विज्ञान)</option>
+                <option value="science1">विज्ञान आणि तंत्रज्ञान भाग १ (Science 1)</option>
+                <option value="science2">विज्ञान आणि तंत्रज्ञान भाग २ (Science 2)</option>
+              </optgroup>
+
+              <optgroup label="३. सामाजिक शास्त्रे (Social Sciences)">
+                <option value="history">इतिहास (History)</option>
+                <option value="civics_pol">नागरिकशास्त्र व राज्यशास्त्र (Civics & Pol. Science)</option>
+                <option value="geography">भूगोल (Geography)</option>
+              </optgroup>
+
+              <optgroup label="४. श्रेणी व विशेष विषय (Special & Grade Subjects)">
+                <option value="health_pe">आरोग्य व शारीरिक शिक्षण (Health & P.E.)</option>
+                <option value="art">कला शिक्षण (Art Education)</option>
+                <option value="work_exp">कार्यानुभव (Work Experience)</option>
+                <option value="defense">संरक्षण शास्त्र (Defense Studies - ९वी व १०वी)</option>
+                <option value="water_sec">जलसुरक्षा (Water Security - ९वी व १०वी)</option>
+              </optgroup>
             </select>
           </div>
 
@@ -179,6 +203,45 @@ ${paper.sectionD.questions.map((q, i) => `${i + 1}. ${q.question}`).join('\n')}
               onChange={(e) => setExamTitle(e.target.value)}
               className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none"
             />
+          </div>
+        </div>
+
+        {/* Quick Subject Access Pills */}
+        <div className="pt-2 border-t border-slate-100 space-y-1.5">
+          <div className="text-[11px] font-bold text-slate-600">त्वरित विषय निवडा:</div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {[
+              { id: 'marathi', label: 'मराठी' },
+              { id: 'hindi', label: 'हिंदी' },
+              { id: 'english', label: 'इंग्रजी' },
+              { id: 'maths', label: 'गणित' },
+              { id: 'maths_algebra', label: 'बीजगणित (भाग १)' },
+              { id: 'maths_geometry', label: 'भूमिती (भाग २)' },
+              { id: 'science', label: 'विज्ञान' },
+              { id: 'science1', label: 'विज्ञान भाग १' },
+              { id: 'science2', label: 'विज्ञान भाग २' },
+              { id: 'history', label: 'इतिहास' },
+              { id: 'civics_pol', label: 'नागरिकशास्त्र' },
+              { id: 'geography', label: 'भूगोल' },
+              { id: 'health_pe', label: 'आरोग्य व शा.शि.' },
+              { id: 'art', label: 'कला' },
+              { id: 'work_exp', label: 'कार्यानुभव' },
+              { id: 'defense', label: 'संरक्षण शास्त्र' },
+              { id: 'water_sec', label: 'जलसुरक्षा' },
+            ].map((sub) => (
+              <button
+                key={sub.id}
+                type="button"
+                onClick={() => handleSubjectChange(sub.id)}
+                className={`px-2 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+                  subject === sub.id
+                    ? 'bg-amber-600 text-white shadow-xs ring-1 ring-amber-500'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                {sub.label}
+              </button>
+            ))}
           </div>
         </div>
 

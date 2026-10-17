@@ -120,3 +120,53 @@ test('CCE Remarks & Notice Board: 4 columns in CCE and custom notice generation'
   assert.ok(customNotice.title.includes('विज्ञान प्रदर्शन'));
   assert.ok(customNotice.instructions.length >= 2);
 });
+
+test('Marksheet: Supports generating 50 students with full calculations', () => {
+  const students50 = generateSampleStudents('std10', 50);
+  assert.equal(students50.length, 50, 'Must generate exactly 50 students');
+  const res = calculateStudentResult(students50[49], 'std10');
+  assert.ok(res.totalObtained > 0);
+  assert.ok(res.percentage > 0);
+});
+
+test('Question Paper: Generates question papers for all subjects including PE, Art, Work Exp, Algebra, Geometry, Science 1 & 2', () => {
+  const subjectsToTest = [
+    'health_pe',
+    'art',
+    'work_exp',
+    'maths_algebra',
+    'maths_geometry',
+    'science1',
+    'science2',
+    'civics_pol',
+  ];
+
+  for (const sub of subjectsToTest) {
+    const qp = generateQuestionPaper('std10', sub, '', 'घटक चाचणी परीक्षा', Date.now());
+    assert.equal(qp.sectionA.questions.length, 5, `${sub} Section A must have 5 blanks`);
+    assert.equal(qp.sectionB.pairs.length, 5, `${sub} Section B must have 5 match pairs`);
+    assert.equal(qp.sectionC.questions.length, 5, `${sub} Section C must have 5 MCQs`);
+    assert.equal(qp.sectionD.questions.length, 5, `${sub} Section D must have 5 one-liners`);
+  }
+});
+
+test('Official Letter: Supports blank template and custom specific text', () => {
+  const customLetter = generateOfficialLetterText(
+    '',
+    'क्रीडांगण सुधारणेबाबत अनुदान मागणी',
+    'deo_sec',
+    'सविनय सादर,\n\nआमच्या शाळेच्या क्रीडांगणाची दुरुस्ती करणे आवश्यक आहे.\n\nतरी निधी मंजूर व्हावा ही विनंती.',
+    'जावक क्र. १०१/२०२६-२७',
+    '१७/१०/२०२६',
+    'शासन निर्णय क्र. क्रीडा-२०२६',
+    ['१. अंदाजपत्रक प्रत', '२. व्यवस्थापन समिती ठराव']
+  );
+
+  assert.equal(customLetter.subject, 'क्रीडांगण सुधारणेबाबत अनुदान मागणी');
+  assert.equal(customLetter.reference, 'शासन निर्णय क्र. क्रीडा-२०२६');
+  assert.equal(customLetter.bodyParagraphs.length, 3);
+  assert.equal(customLetter.enclosures.length, 2);
+  assert.equal(customLetter.place, 'आडोळ बु.');
+  assert.equal(customLetter.signatoryTitle, 'मुख्याध्यापक स्वाक्षरी');
+});
+

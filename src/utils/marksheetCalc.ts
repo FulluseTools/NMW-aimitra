@@ -182,50 +182,44 @@ export function calculateStudentResult(
 }
 
 export function generateSampleStudents(classKey: string, count: number = 10): StudentMarks[] {
-  const sampleNames = [
-    { name: 'आरव विनोद ठोंबरे', mother: 'सुनिता', gender: 'मुला' as const },
-    { name: 'प्रियांका ज्ञानेश्वर देशमुख', mother: 'मंगला', gender: 'मुलगी' as const },
-    { name: 'आदित्य गजानन इंगळे', mother: 'संगीता', gender: 'मुला' as const },
-    { name: 'स्नेहा गजानन वासनिक', mother: 'उषा', gender: 'मुलगी' as const },
-    { name: 'रोहन प्रकाश साटोटे', mother: 'प्रतिभा', gender: 'मुला' as const },
-    { name: 'अनिकेत भास्कर तायडे', mother: 'आशा', gender: 'मुला' as const },
-    { name: 'वैष्णवी कैलास वाघ', mother: 'अनिता', gender: 'मुलगी' as const },
-    { name: 'ओंकार सुरेश चव्हाण', mother: 'अलका', gender: 'मुला' as const },
-    { name: 'दिशा विठ्ठल बावस्कर', mother: 'कमल', gender: 'मुलगी' as const },
-    { name: 'मयूर गजानन काळे', mother: 'सुरेखा', gender: 'मुला' as const },
-    { name: 'सलोनी ज्ञानेश्वर सोनोने', mother: 'शोभा', gender: 'मुलगी' as const },
-    { name: 'करण गजानन मोरे', mother: 'जयश्री', gender: 'मुला' as const },
-    { name: 'रुतुजा संतोष बावस्कर', mother: 'छाया', gender: 'मुलगी' as const },
-    { name: 'गौरव प्रल्हाद मोरे', mother: 'शशिकला', gender: 'मुला' as const },
-    { name: 'साक्षी विनायक घ्यारे', mother: 'सरस्वती', gender: 'मुलगी' as const },
-  ];
+  const firstNamesBoys = ['आरव', 'आदित्य', 'रोहन', 'अनिकेत', 'ओंकार', 'मयूर', 'करण', 'गौरव', 'सुमित', 'प्रणव', 'साहिल', 'ऋषिकेश', 'ओम', 'विशाल', 'तेजस', 'हर्षल', 'स्वप्निल', 'वैभव', 'अक्षय', 'योगेश', 'समीर', 'दीपक', 'अमोल', 'शुभम', 'चेतन'];
+  const firstNamesGirls = ['प्रियांका', 'स्नेहा', 'वैष्णवी', 'दिशा', 'सलोनी', 'रुतुजा', 'साक्षी', 'पुनम', 'अंकिता', 'दीक्षा', 'कोमल', 'नेहा', 'प्राजक्ता', 'मयुरी', 'पायल', 'निकिता', 'अश्विनी', 'भाग्यश्री', 'शितल', 'पूनम', 'कावेरी', 'गायत्री', 'पल्लवी', 'श्रद्धा', 'तनुजा'];
+  const middleNames = ['विनोद', 'ज्ञानेश्वर', 'गजानन', 'प्रकाश', 'भास्कर', 'कैलास', 'सुरेश', 'विठ्ठल', 'संतोष', 'प्रल्हाद', 'विनायक', 'अशोक', 'रमेश', 'दिलीप', 'संजय', 'अनिल', 'नामदेव', 'शंकर', 'चंद्रकांत', 'मधुकर'];
+  const lastNames = ['ठोंबरे', 'देशमुख', 'इंगळे', 'वासनिक', 'साटोटे', 'तायडे', 'वाघ', 'चव्हाण', 'बावस्कर', 'काळे', 'सोनोने', 'मोरे', 'घ्यारे', 'पाटील', 'शिंदे', 'गायकवाड', 'कदम', 'जाधव', 'पवार', 'राऊत'];
+  const motherNames = ['सुनिता', 'मंगला', 'संगीता', 'उषा', 'प्रतिभा', 'आशा', 'अनिता', 'अलका', 'कमल', 'सुरेखा', 'शोभा', 'जयश्री', 'छाया', 'शशिकला', 'सरस्वती', 'सुमन', 'विमल', 'लता', 'कुंदा', 'मीना'];
 
   const { academic, graded } = getSubjectsForClass(classKey);
-
   const students: StudentMarks[] = [];
-  const limit = Math.min(count, sampleNames.length);
+  const targetCount = Math.max(1, Math.min(60, count));
 
-  for (let i = 0; i < limit; i++) {
-    const s = sampleNames[i];
+  for (let i = 0; i < targetCount; i++) {
+    const isGirl = i % 2 === 1;
+    const fNames = isGirl ? firstNamesGirls : firstNamesBoys;
+    const fName = fNames[i % fNames.length];
+    const mName = middleNames[i % middleNames.length];
+    const lName = lastNames[i % lastNames.length];
+    const mother = motherNames[i % motherNames.length];
+    const fullName = `${fName} ${mName} ${lName}`;
+
     const academicMarks: Record<string, number> = {};
     const gradeMarks: Record<string, 'A' | 'B' | 'C' | 'D'> = {};
 
     academic.forEach((sub, subIdx) => {
-      // Deterministic marks between 60% and 92%
-      const basePercentage = 68 + ((i * 7 + subIdx * 5) % 27);
+      // Realistic varied marks between 55% and 94%
+      const basePercentage = 60 + ((i * 11 + subIdx * 7) % 33);
       academicMarks[sub.id] = Math.round((sub.maxMarks * basePercentage) / 100);
     });
 
     graded.forEach((sub, gIdx) => {
-      const grades: ('A' | 'B' | 'C')[] = ['A', 'A', 'B'];
-      gradeMarks[sub.id] = grades[(i + gIdx) % grades.length];
+      const grades: ('A' | 'B' | 'C')[] = ['A', 'A', 'B', 'A', 'B'];
+      gradeMarks[sub.id] = grades[(i * 2 + gIdx) % grades.length];
     });
 
     students.push({
       rollNo: i + 1,
-      name: s.name,
-      motherName: s.mother,
-      gender: s.gender,
+      name: fullName,
+      motherName: mother,
+      gender: isGirl ? 'मुलगी' : 'मुला',
       academicMarks,
       gradeMarks,
     });

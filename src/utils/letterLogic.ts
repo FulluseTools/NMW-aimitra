@@ -122,14 +122,20 @@ export function generateOfficialLetterText(
   customOfficeId?: string,
   customBody?: string,
   outwardNo: string = '_____',
-  dateString?: string
+  dateString?: string,
+  customReference?: string,
+  customEnclosures?: string[]
 ): GeneratedOfficialLetter {
-  const template = LETTER_TEMPLATES.find((t) => t.id === templateId) || LETTER_TEMPLATES[0];
-  const office = GOV_OFFICES.find((o) => o.id === (customOfficeId || template.officeId)) || GOV_OFFICES[0];
+  const template = LETTER_TEMPLATES.find((t) => t.id === templateId);
+  const office = GOV_OFFICES.find((o) => o.id === (customOfficeId || (template ? template.officeId : undefined))) || GOV_OFFICES[0];
   const currentDate = dateString || new Date().toLocaleDateString('mr-IN');
 
-  const body = customBody || template.bodyContent;
-  const paragraphs = body.split('\n\n').filter((p) => p.trim().length > 0);
+  const body = customBody !== undefined ? customBody : (template ? template.bodyContent : '');
+  const paragraphs = body ? body.split('\n\n').filter((p) => p.trim().length > 0) : [];
+
+  const subject = customSubject !== undefined ? customSubject : (template ? template.defaultSubject : '');
+  const reference = customReference !== undefined ? customReference : (template ? template.defaultReference : '');
+  const enclosures = customEnclosures !== undefined ? customEnclosures : (template ? template.enclosures : []);
 
   // NOTICE STRICT COMPLIANCE:
   // 1. "udise क्रमांक आणि shalarth id काढून टाकणे" - not present in the body/myana
@@ -143,11 +149,11 @@ export function generateOfficialLetterText(
     recipientTitle: office.title,
     recipientOffice: office.office,
     recipientLocation: office.location,
-    subject: customSubject || template.defaultSubject,
-    reference: template.defaultReference,
+    subject: subject,
+    reference: reference,
     salutation: office.title.includes('शिक्षणाधिकारी') || office.title.includes('उपसंचालक') ? 'सविनय सादर,' : 'महोदय,',
     bodyParagraphs: paragraphs,
-    enclosures: template.enclosures,
+    enclosures: enclosures,
     place: 'आडोळ बु.',
     signatoryTitle: 'मुख्याध्यापक स्वाक्षरी',
   };
